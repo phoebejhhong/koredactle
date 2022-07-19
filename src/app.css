@@ -1,0 +1,13 @@
+@import '@fontsource/fira-mono';
+
+:root {
+	font-size: 18px;
+	font-family: sans-serif;
+}
+
+body {
+	min-height: 100vh;
+	margin: 0;
+	background: #212529;
+	color: #f1f3f5;
+}
