@@ -30,6 +30,7 @@
 		const rand = Math.floor(Math.random() * titles.length);
 
 		const title = titles[rand];
+console.log("T", title)
 		fetch(`https://ko.wikipedia.org/api/rest_v1/page/mobile-sections/${title}`)
 		.then(response => response.json())
 		.then(data => {
@@ -81,15 +82,29 @@
 			.replace(/\[\d+\]/ig, '');
 	}
 
+const singleTrailings = ['을', '를', '은', '는', '이', '가', '의', '에', '라', '와', '과', '도', '만'];
+const doubleTrailings = ['에는', '에서', '에게', '이며', '까지'];
+
 const getTokens = (text:string) => {
 	const tokens = [];
 	text.split(/\s/g).forEach(word => {
 		let trailing = '';
-		const lastLetter = word[word.length - 1];
-		if (['을', '를', '은', '는', '이', '가', '의', '에', '라'].indexOf(lastLetter) !== -1) {
-			word = word.substring(0, word.length -1);
-			trailing = lastLetter;
+		if (word.length > 2) {
+			const lastTwoLetters = word.substring(word.length -2, word.length)
+			if (doubleTrailings.indexOf(lastTwoLetters) !== -1) {
+				word = word.substring(0, word.length - 2);
+				trailing = lastTwoLetters;
+			}
 		}
+
+		if (trailing === '') {
+			const lastLetter = word[word.length - 1];
+			if (singleTrailings.indexOf(lastLetter) !== -1) {
+				word = word.substring(0, word.length - 1);
+				trailing = lastLetter;
+			}
+		}
+
 		wholeText += ` ${word}`;
 
 		tokens.push({
@@ -104,6 +119,9 @@ const getTokens = (text:string) => {
 	const getParagraphsWithTokens = (text: string) => {
 		const paragraphs = [];
 		text.split(/\n/g).forEach(paragraph => {
+			if (paragraph.trim() === '') {
+				return;
+			}
 			const tokens = getTokens(paragraph);
 			paragraphs.push(tokens);
 		});
@@ -114,6 +132,10 @@ const getTokens = (text:string) => {
 	getArticle();
 
 	const handleGuessSubmit = () => {
+		guess = guess.trim();
+		if (guesses[guess]) {
+			return;
+		}
 		let regex = new RegExp(`(?:^|\\s|\\"|\\'|\\()${guess}(?:$|\\s|\\.|\\!|\\?|\\:|\\,|\\;|\\"|\\'|\\))`,'g');
 		let count = (wholeText.match(regex) || []).length;
 		guesses[guess] = count;
@@ -123,7 +145,7 @@ const getTokens = (text:string) => {
 </script>
 
 <svelte:head>
-	<title>Home</title>
+	<title>코리댁틀</title>
 	<meta name="Koredactle" content="Koredactle" />
 </svelte:head>
 
@@ -133,7 +155,10 @@ const getTokens = (text:string) => {
 	</h1>
 </header>
 <main>
-	<article>
+	<article class={!wikiData ? 'loading' : undefined}>
+			{#if !wikiData}
+				<span>Loading....</span>
+			{/if}
 			{#each sections as section}
 			<h3>
 				{#each section.heading as headingToken}
@@ -158,7 +183,7 @@ const getTokens = (text:string) => {
 			<button type="submit">입력</button>
 		</form>
 		<table class="guesses">
-			{#each Object.keys(guesses) as guess}
+			{#each Object.keys(guesses).reverse() as guess}
 				<tr>
 					<td>{guess}</td>
 					<td>{guesses[guess]}</td>
@@ -180,12 +205,11 @@ const getTokens = (text:string) => {
 		gap: 8px;
 	}
 
-	section {
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
-		align-items: center;
-		flex: 1;
+
+	article.loading {
+    width: 100%;
+    margin: auto;
+    text-align: center;
 	}
 
 	h1 {
@@ -194,14 +218,32 @@ const getTokens = (text:string) => {
 	}
 
 	section.guesses {
-    display: flex;
-    gap: 24px;
+		position: fixed;
+    background: #212529;
+    bottom: 0;
+    left: 0;
+    padding: 12px 24px;
+    width: 100%;
+    height: 30vh;
+    overflow-y: scroll;
 	}
 
 	input {
     font-size: 16px;
 	}
-	table.guesses {
+	table.guesses:not(:empty) {
 		width: 100%;
+		margin-top: 24px;
 	}
+
+@media (min-width: 768px) {
+	section.guesses {
+		padding: 24px;
+		position: unset;
+		overflow-y: unset;
+		width: unset;
+		height: unset;
+	}
+}
+
 </style>
