@@ -28,9 +28,8 @@
 
 	const getArticle = () => {
 		const rand = Math.floor(Math.random() * titles.length);
-
 		const title = titles[rand];
-console.log("T", title)
+
 		fetch(`https://ko.wikipedia.org/api/rest_v1/page/mobile-sections/${title}`)
 		.then(response => response.json())
 		.then(data => {
@@ -82,12 +81,15 @@ console.log("T", title)
 			.replace(/\[\d+\]/ig, '');
 	}
 
-const singleTrailings = ['을', '를', '은', '는', '이', '가', '의', '에', '라', '와', '과', '도', '만'];
-const doubleTrailings = ['에는', '에서', '에게', '이며', '까지'];
+const singleTrailings = ['을', '를', '은', '는', '이', '가', '의', '에', '라', '와', '과', '도', '만', '한', '.', ','];
+const doubleTrailings = ['에는', '에서', '에게', '이며', '까지', '다.'];
 
 const getTokens = (text:string) => {
 	const tokens = [];
 	text.split(/\s/g).forEach(word => {
+		if (word.trim() === '') {
+			return;
+		}
 		let trailing = '';
 		if (word.length > 2) {
 			const lastTwoLetters = word.substring(word.length -2, word.length)
@@ -134,6 +136,7 @@ const getTokens = (text:string) => {
 	const handleGuessSubmit = () => {
 		guess = guess.trim();
 		if (guesses[guess]) {
+			guess = '';
 			return;
 		}
 		let regex = new RegExp(`(?:^|\\s|\\"|\\'|\\()${guess}(?:$|\\s|\\.|\\!|\\?|\\:|\\,|\\;|\\"|\\'|\\))`,'g');
@@ -181,6 +184,9 @@ const getTokens = (text:string) => {
 			<label for="guess">예상 단어</label>
 			<input id="guess" bind:value={guess}>
 			<button type="submit">입력</button>
+			{#if Object.keys(guesses).length > 0 }
+				<span class="guess-count">총 개수: {Object.keys(guesses).length}</span>
+			{/if}
 		</form>
 		<table class="guesses">
 			{#each Object.keys(guesses).reverse() as guess}
@@ -222,27 +228,63 @@ const getTokens = (text:string) => {
     background: #212529;
     bottom: 0;
     left: 0;
-    padding: 12px 24px;
+    padding: 0 24px 12px 24px;
     width: 100%;
     height: 30vh;
     overflow-y: scroll;
 	}
 
+	form {
+		position: fixed;
+		background: #212529;
+    padding: 12px 0;
+    width: 100%;
+	}
+
+	label {
+		font-size: 14px;
+	}
+
 	input {
     font-size: 16px;
 	}
+	.guess-count {
+		position: fixed;
+    right: 12px;
+		font-size: 14px;
+	}
 	table.guesses:not(:empty) {
 		width: 100%;
-		margin-top: 24px;
+		margin-top: 48px;
 	}
 
 @media (min-width: 768px) {
+	article {
+		padding-right: 30vw;
+	}
+
+	form {
+		box-sizing: border-box;
+		height: 72px;
+	}
+	label {
+		display: block;
+		margin-bottom: 4px;
+	}
+	.guess-count {
+		position: fixed;
+		top: 12px;
+	}
 	section.guesses {
-		padding: 24px;
-		position: unset;
-		overflow-y: unset;
-		width: unset;
-		height: unset;
+    box-sizing: border-box;
+		width: 30vw;
+		height: 100%;
+		left: unset;
+		right: 0;
+		top: 0;
+	}
+	table.guesses:not(:empty) {
+		margin-top: 72px;
 	}
 }
 
